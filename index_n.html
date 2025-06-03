@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Word Choice Task with Correctness</title>
+  <script src="https://cdn.jsdelivr.net/npm/jspsych@6.3.1/jspsych.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspsych@6.3.1/plugins/jspsych-html-keyboard-response.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspsych@6.3.1/plugins/jspsych-survey-html-form.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/jspsych@6.3.1/css/jspsych.css" rel="stylesheet" />
+  <style>
+    .word-button {
+      font-size: 28px;
+      padding: 15px;
+      margin: 10px;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      background-color: white;
+      cursor: pointer;
+      transition: background-color 0.2s, border-color 0.2s;
+      display: inline-block;
+    }
+    .word-button.selected {
+      background-color: #cce5ff;
+      border-color: #66b3ff;
+    }
+    .button-container {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    #continue-btn {
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      font-size: 20px;
+      padding: 10px 20px;
+      margin-top: 20px;
+      display: block;
+    }
+  </style>
+</head>
+<body></body>
+<script>
+  var timeline = [];
+
+  function createTrialWithCorrectness(row) {
+    const word1 = row.Word1;
+    const word2 = row.Word2;
+    const word3 = row.Word3;
+    const incorrectIndex = parseInt(row.Correct); // 1, 2, or 3
+
+    return {
+      type: 'html-keyboard-response',
+      stimulus: function() {
+        return `
+          <div class="button-container">
+            <div class="word-button" data-value="${word1}" data-index="1">${word1}</div>
+            <div class="word-button" data-value="${word2}" data-index="2">${word2}</div>
+            <div class="word-button" data-value="${word3}" data-index="3">${word3}</div>
+          </div>
+          <button id="continue-btn" disabled>DALEJ</button>
+        `;
+      },
+      choices: "NO_KEYS",
+      on_load: function() {
+        let selected = new Set();
+        const buttons = document.querySelectorAll('.word-button');
+        const continueBtn = document.getElementById('continue-btn');
+
+        buttons.forEach(btn => {
+          btn.addEventListener('click', () => {
+            const val = btn.getAttribute('data-value');
+            if (selected.has(val)) {
+              selected.delete(val);
+              btn.classList.remove('selected');
+            } else if (selected.size < 2) {
+              selected.add(val);
+              btn.classList.add('selected');
+            }
+
+            continueBtn.disabled = selected.size !== 2;
+          });
+        });
+
+        continueBtn.addEventListener('click', () => {
+          const selectedWords = Array.from(selected);
+          const incorrectWord = [word1, word2, word3][incorrectIndex - 1];
+
+          const trialCorrect = !selectedWords.includes(incorrectWord);
+          const clickedIncorrect = selectedWords.includes(incorrectWord) ? incorrectIndex : 0;
+
+          const data = {
+            selected: selectedWords,
+            incorrect_index: incorrectIndex,
+            incorrect_word: incorrectWord,
+            trial_correct: trialCorrect,
+            clicked_incorrect: clickedIncorrect
+          };
+
+          jsPsych.finishTrial(data);
+        });
+      }
+    };
+  }
+
+  fetch('words_cleaned.csv')
+    .then(response => response.text())
+    .then(csv => {
+      const results = Papa.parse(csv, { header: true });
+
+      results.data.forEach(row => {
+        if (row.Word1 && row.Word2 && row.Word3 && row.Correct) {
+          timeline.push(createTrialWithCorrectness(row));
+        }
+      });
+
+      timeline.push({
+        type: 'html-keyboard-response',
+        stimulus: '<p style="font-size: 32px;">KONIEC TESTU</p>',
+        choices: jsPsych.NO_KEYS,
+        trial_duration: 2000
+      });
+
+      jsPsych.data.addProperties({participant: 'test'});
+
+      
+      timeline.unshift({
+        type: 'survey-html-form', button_label: '', button_label: "&nbsp;", button_label: "",
+        preamble: '<p style="font-size: 24px; font-weight: bold;">Identyfikator osoby badanej</p>',
+        html: '<div style="text-align:center;"><input name="participant_id" type="text" required style="font-size:18px; padding:8px; margin-bottom: 20px;" />' + '<br><button type="submit" style="font-size:20px; padding:10px 30px;">Rozpocznij eksperyment</button></div>',
+        on_finish: function(data) {
+          jsPsych.data.addProperties({participant_id: data.response.participant_id});
+        }
+      });
+
+      jsPsych.init({
+
+        timeline: timeline,
+        on_finish: function() {
+          const csv = jsPsych.data.get().csv();
+          const blob = new Blob([csv], { type: 'text/csv' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          const pid = jsPsych.data.get().values()[0].participant_id || 'unknown';
+          a.download = 'responses_' + pid + '.csv';
+          a.click();
+        }
+      });
+    });
+</script>
+</html>
+
+<style>
+  form button.jspsych-btn {
+    display: none !important;
+  }
+</style>
