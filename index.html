@@ -139,7 +139,15 @@
         },
         {
           type: 'html-keyboard-response',
-          stimulus: "<video width='800' controls autoplay><source src='instrukcje-1.mp4' type='video/mp4'>Twoja przeglądarka nie obsługuje wideo.</video><p style='font-size: 20px;'>Naciśnij dowolny klawisz, aby kontynuować</p>"
+          stimulus: function() {
+            return `
+              <video width="800" controls autoplay>
+                <source src="instrukcje-1.mp4" type="video/mp4">
+                Twoja przeglądarka nie obsługuje wideo.
+              </video>
+              <p style="font-size: 20px;">Naciśnij dowolny klawisz, aby kontynuować</p>
+            `;
+          }
         }
       );
 
