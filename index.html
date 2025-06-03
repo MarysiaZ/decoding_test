@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Word Choice Task with Correctness</title>
+  <title>Word Choice Task with Video</title>
   <script src="https://cdn.jsdelivr.net/npm/jspsych@6.3.1/jspsych.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspsych@6.3.1/plugins/jspsych-html-keyboard-response.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspsych@6.3.1/plugins/jspsych-survey-html-form.js"></script>
@@ -31,13 +31,15 @@
       margin-bottom: 20px;
     }
     #continue-btn {
-      display: block;
-      margin-left: auto;
-      margin-right: auto;
       font-size: 20px;
       padding: 10px 20px;
       margin-top: 20px;
       display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    form button.jspsych-btn {
+      display: none !important;
     }
   </style>
 </head>
@@ -45,23 +47,47 @@
 <script>
   var timeline = [];
 
+  timeline.unshift({
+    type: 'survey-html-form',
+    preamble: '<p style="font-size: 24px; font-weight: bold;">Identyfikator osoby badanej</p>',
+    html: '<div style="text-align:center;"><input name="participant_id" type="text" required style="font-size:18px; padding:8px; margin-bottom: 20px;" />' +
+          '<br><button type="submit" style="font-size:20px; padding:10px 30px;">Rozpocznij eksperyment</button></div>',
+    button_label: '',
+    on_finish: function(data) {
+      jsPsych.data.addProperties({participant_id: data.response.participant_id});
+    }
+  });
+
+  // Video instruction trial
+  timeline.splice(1, 0, {
+    type: 'html-keyboard-response',
+    stimulus: \`
+      <video width="640" height="360" controls autoplay>
+        <source src="instrukcje-1.mp4" type="video/mp4">
+        Twoja przeglądarka nie obsługuje elementu video.
+      </video>
+      <p style="font-size: 20px; margin-top: 20px;">Naciśnij spację, aby kontynuować</p>
+    \`,
+    choices: [' ']
+  });
+
   function createTrialWithCorrectness(row) {
     const word1 = row.Word1;
     const word2 = row.Word2;
     const word3 = row.Word3;
-    const incorrectIndex = parseInt(row.Correct); // 1, 2, or 3
+    const incorrectIndex = parseInt(row.Correct);
 
     return {
       type: 'html-keyboard-response',
       stimulus: function() {
-        return `
+        return \`
           <div class="button-container">
-            <div class="word-button" data-value="${word1}" data-index="1">${word1}</div>
-            <div class="word-button" data-value="${word2}" data-index="2">${word2}</div>
-            <div class="word-button" data-value="${word3}" data-index="3">${word3}</div>
+            <div class="word-button" data-value="\${word1}" data-index="1">\${word1}</div>
+            <div class="word-button" data-value="\${word2}" data-index="2">\${word2}</div>
+            <div class="word-button" data-value="\${word3}" data-index="3">\${word3}</div>
           </div>
           <button id="continue-btn" disabled>DALEJ</button>
-        `;
+        \`;
       },
       choices: "NO_KEYS",
       on_load: function() {
@@ -123,28 +149,15 @@
         trial_duration: 2000
       });
 
-      jsPsych.data.addProperties({participant: 'test'});
-
-      
-      timeline.unshift({
-        type: 'survey-html-form', button_label: '', button_label: "&nbsp;", button_label: "",
-        preamble: '<p style="font-size: 24px; font-weight: bold;">Identyfikator osoby badanej</p>',
-        html: '<div style="text-align:center;"><input name="participant_id" type="text" required style="font-size:18px; padding:8px; margin-bottom: 20px;" />' + '<br><button type="submit" style="font-size:20px; padding:10px 30px;">Rozpocznij eksperyment</button></div>',
-        on_finish: function(data) {
-          jsPsych.data.addProperties({participant_id: data.response.participant_id});
-        }
-      });
-
       jsPsych.init({
-
         timeline: timeline,
         on_finish: function() {
+          const pid = jsPsych.data.get().values()[0].participant_id || 'unknown';
           const csv = jsPsych.data.get().csv();
           const blob = new Blob([csv], { type: 'text/csv' });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          const pid = jsPsych.data.get().values()[0].participant_id || 'unknown';
           a.download = 'responses_' + pid + '.csv';
           a.click();
         }
@@ -152,9 +165,3 @@
     });
 </script>
 </html>
-
-<style>
-  form button.jspsych-btn {
-    display: none !important;
-  }
-</style>
