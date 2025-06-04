@@ -49,7 +49,7 @@
     const word1 = row.Word1;
     const word2 = row.Word2;
     const word3 = row.Word3;
-    const incorrectIndex = parseInt(row.Correct); // 1, 2, or 3
+    const incorrectIndex = parseInt(row.Correct);
 
     return {
       type: 'html-keyboard-response',
@@ -105,6 +105,43 @@
     };
   }
 
+  // Video trial
+  
+
+  // Start button page
+  
+
+  // Participant ID form
+  timeline.unshift({
+  type: 'html-keyboard-response',
+  stimulus: '<div style="text-align: center;"><button onclick="jsPsych.finishTrial()" style="font-size: 24px; padding: 15px 30px;">START</button></div>',
+  choices: jsPsych.NO_KEYS
+});
+timeline.unshift({
+  type: 'html-keyboard-response',
+  stimulus: `
+    <div style="text-align:center;">
+      <video id="introVideo" width="800" controls>
+        <source src="instrukcje-1.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+      <br><br>
+      <button onclick="jsPsych.finishTrial()" style="font-size: 24px; padding: 10px 25px;">DALEJ</button>
+    </div>
+  `,
+  choices: jsPsych.NO_KEYS
+});
+
+timeline.unshift({
+    type: 'survey-html-form', button_label: 'DALEJ',
+    preamble: '<p style="font-size: 24px; font-weight: bold;">Identyfikator osoby badanej</p>',
+    html: '<div style="text-align:center;"><input name="participant_id" type="text" required style="font-size:18px; padding:8px; margin-bottom: 20px;" />' +
+          '</div>',
+    on_finish: function(data) {
+      jsPsych.data.addProperties({participant_id: data.response.participant_id});
+    }
+  });
+
   fetch('words_cleaned.csv')
     .then(response => response.text())
     .then(csv => {
@@ -125,18 +162,7 @@
 
       jsPsych.data.addProperties({participant: 'test'});
 
-      
-      timeline.unshift({
-        type: 'survey-html-form', button_label: '', button_label: "&nbsp;", button_label: "",
-        preamble: '<p style="font-size: 24px; font-weight: bold;">Identyfikator osoby badanej</p>',
-        html: '<div style="text-align:center;"><input name="participant_id" type="text" required style="font-size:18px; padding:8px; margin-bottom: 20px;" />' + '<br><button type="submit" style="font-size:20px; padding:10px 30px;">Rozpocznij eksperyment</button></div>',
-        on_finish: function(data) {
-          jsPsych.data.addProperties({participant_id: data.response.participant_id});
-        }
-      });
-
       jsPsych.init({
-
         timeline: timeline,
         on_finish: function() {
           const csv = jsPsych.data.get().csv();
