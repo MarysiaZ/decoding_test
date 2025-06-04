@@ -165,14 +165,21 @@ timeline.unshift({
       jsPsych.init({
         timeline: timeline,
         on_finish: function() {
-          const csv = jsPsych.data.get().csv();
-          const blob = new Blob([csv], { type: 'text/csv' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
+          const data = jsPsych.data.get().values();
           const pid = jsPsych.data.get().values()[0].participant_id || 'unknown';
-          a.download = 'responses_' + pid + '.csv';
-          a.click();
+
+          fetch("https://script.google.com/macros/s/AKfycbxZHfagqCbKbpuG6u-8ArGOnb1JXdnMkiQ_A6YBdVRL51WZKQaCD7UMMDnARbuLNViTAQ/exec", {
+            method: "POST",
+            body: JSON.stringify({ participant_id: pid, responses: data }),
+            headers: {
+              "Content-Type": "application/json"
+            }
+          }).then(() => {
+            document.body.innerHTML = "<p style='font-size: 32px; text-align: center;'>Dziękujemy! Twoje odpowiedzi zostały zapisane.</p>";
+          }).catch((err) => {
+            document.body.innerHTML = "<p style='font-size: 32px; text-align: center; color: red;'>Błąd zapisu danych. Spróbuj ponownie.</p>";
+            console.error(err);
+          });
         }
       });
     });
