@@ -126,12 +126,31 @@
       jsPsych.data.addProperties({participant: 'test'});
 
       
-      timeline.unshift({
-        type: 'survey-html-form', button_label: '', button_label: "&nbsp;", button_label: "",
-        preamble: '<p style="font-size: 24px; font-weight: bold;">Identyfikator osoby badanej</p>',
-        html: '<div style="text-align:center;"><input name="participant_id" type="text" required style="font-size:18px; padding:8px; margin-bottom: 20px;" />' + '<br><button type="submit" style="font-size:20px; padding:10px 30px;">Rozpocznij eksperyment</button></div>',
-        on_finish: function(data) {
-          jsPsych.data.addProperties({participant_id: data.response.participant_id});
+      
+      timeline.unshift(
+        {
+          type: 'survey-html-form',
+          preamble: '<p style="font-size: 24px; font-weight: bold;">Identyfikator osoby badanej</p>',
+          html: '<div style="text-align:center;"><input name="participant_id" type="text" required style="font-size:18px; padding:8px; margin-bottom: 20px;" />' +
+                '<br><button type="submit" style="font-size:20px; padding:10px 30px;">Rozpocznij eksperyment</button></div>',
+          on_finish: function(data) {
+            jsPsych.data.addProperties({participant_id: data.response.participant_id});
+          }
+        },
+        {
+          type: 'html-keyboard-response',
+          stimulus: function() {
+            return `
+              <video width="800" controls autoplay>
+                <source src="instrukcje-1.mp4" type="video/mp4">
+                Twoja przeglądarka nie obsługuje wideo.
+              </video>
+              <p style="font-size: 20px;">Naciśnij dowolny klawisz, aby kontynuować</p>
+            `;
+          }
+        }
+      );
+
         }
       });
 
