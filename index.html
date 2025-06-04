@@ -165,16 +165,39 @@ timeline.unshift({
       jsPsych.init({
         timeline: timeline,
         on_finish: function() {
-          const data = jsPsych.data.get().values();
-          const pid = jsPsych.data.get().values()[0].participant_id || 'unknown';
+      const data = jsPsych.data.get().values();
+      const pid = jsPsych.data.get().values()[0].participant_id || 'unknown';
 
-          fetch("https://script.google.com/macros/s/AKfycbxZHfagqCbKbpuG6u-8ArGOnb1JXdnMkiQ_A6YBdVRL51WZKQaCD7UMMDnARbuLNViTAQ/exec", {
-            method: "POST",
-            body: JSON.stringify({ participant_id: pid, responses: data }),
-            headers: {
-              "Content-Type": "application/json"
-            }
-          }).then(() => {
+      fetch("https://script.google.com/macros/s/AKfycbxZHfagqCbKbpuG6u-8ArGOnb1JXdnMkiQ_A6YBdVRL51WZKQaCD7UMMDnARbuLNViTAQ/exec", {
+        method: "POST",
+        body: JSON.stringify({ participant_id: pid, responses: data }),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      }).then(() => {
+        document.body.innerHTML = "<p style='font-size: 32px; text-align: center;'>Dziękujemy! Twoje odpowiedzi zostały zapisane.</p>";
+      }).catch((err) => {
+        console.error("Google Sheets save failed:", err);
+        document.body.innerHTML = `
+          <p style='font-size: 28px; color: red; text-align: center;'>Błąd zapisu danych. Spróbuj ponownie.</p>
+          <p style='font-size: 20px; text-align: center;'>Zapisz dane lokalnie, klikając poniżej.</p>
+          <div style='text-align: center; margin-top: 20px;'>
+            <button onclick="downloadBackup()" style='font-size: 20px; padding: 10px 20px;'>Pobierz dane</button>
+          </div>
+        `;
+
+        window.downloadBackup = function () {
+          const csv = jsPsych.data.get().csv();
+          const blob = new Blob([csv], { type: 'text/csv' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'backup_responses.csv';
+          a.click();
+        }
+      });
+    }
+}).then(() => {
             document.body.innerHTML = "<p style='font-size: 32px; text-align: center;'>Dziękujemy! Twoje odpowiedzi zostały zapisane.</p>";
           }).catch((err) => {
             document.body.innerHTML = "<p style='font-size: 32px; text-align: center; color: red;'>Błąd zapisu danych. Spróbuj ponownie.</p>";
