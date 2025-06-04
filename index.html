@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -105,38 +106,30 @@
     };
   }
 
-  // Video trial
-  
-
-  // Start button page
-  
-
-  // Participant ID form
+  // Instructional pages
   timeline.unshift({
-  type: 'html-keyboard-response',
-  stimulus: '<div style="text-align: center;"><button onclick="jsPsych.finishTrial()" style="font-size: 24px; padding: 15px 30px;">START</button></div>',
-  choices: jsPsych.NO_KEYS
-});
-timeline.unshift({
-  type: 'html-keyboard-response',
-  stimulus: `
-    <div style="text-align:center;">
-      <video id="introVideo" width="800" controls>
-        <source src="instrukcje-1.mp4" type="video/mp4">
-        Your browser does not support the video tag.
-      </video>
-      <br><br>
-      <button onclick="jsPsych.finishTrial()" style="font-size: 24px; padding: 10px 25px;">DALEJ</button>
-    </div>
-  `,
-  choices: jsPsych.NO_KEYS
-});
-
-timeline.unshift({
+    type: 'html-keyboard-response',
+    stimulus: '<div style="text-align: center;"><button onclick="jsPsych.finishTrial()" style="font-size: 24px; padding: 15px 30px;">START</button></div>',
+    choices: jsPsych.NO_KEYS
+  });
+  timeline.unshift({
+    type: 'html-keyboard-response',
+    stimulus: `
+      <div style="text-align:center;">
+        <video id="introVideo" width="800" controls>
+          <source src="instrukcje-1.mp4" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+        <br><br>
+        <button onclick="jsPsych.finishTrial()" style="font-size: 24px; padding: 10px 25px;">DALEJ</button>
+      </div>
+    `,
+    choices: jsPsych.NO_KEYS
+  });
+  timeline.unshift({
     type: 'survey-html-form', button_label: 'DALEJ',
     preamble: '<p style="font-size: 24px; font-weight: bold;">Identyfikator osoby badanej</p>',
-    html: '<div style="text-align:center;"><input name="participant_id" type="text" required style="font-size:18px; padding:8px; margin-bottom: 20px;" />' +
-          '</div>',
+    html: '<div style="text-align:center;"><input name="participant_id" type="text" required style="font-size:18px; padding:8px; margin-bottom: 20px;" /></div>',
     on_finish: function(data) {
       jsPsych.data.addProperties({participant_id: data.response.participant_id});
     }
@@ -146,7 +139,6 @@ timeline.unshift({
     .then(response => response.text())
     .then(csv => {
       const results = Papa.parse(csv, { header: true });
-
       results.data.forEach(row => {
         if (row.Word1 && row.Word2 && row.Word3 && row.Correct) {
           timeline.push(createTrialWithCorrectness(row));
@@ -160,57 +152,39 @@ timeline.unshift({
         trial_duration: 2000
       });
 
-      jsPsych.data.addProperties({participant: 'test'});
-
       jsPsych.init({
         timeline: timeline,
         on_finish: function() {
-      const data = jsPsych.data.get().values();
-      const pid = jsPsych.data.get().values()[0].participant_id || 'unknown';
+          const data = jsPsych.data.get().values();
+          const pid = jsPsych.data.get().values()[0].participant_id || 'unknown';
 
-      fetch("https://script.google.com/macros/s/AKfycbxZHfagqCbKbpuG6u-8ArGOnb1JXdnMkiQ_A6YBdVRL51WZKQaCD7UMMDnARbuLNViTAQ/exec", {
-        method: "POST",
-        body: JSON.stringify({ participant_id: pid, responses: data }),
-        headers: {
-          "Content-Type": "application/json"
-        }
-      }).then(() => {
-        document.body.innerHTML = "<p style='font-size: 32px; text-align: center;'>Dziękujemy! Twoje odpowiedzi zostały zapisane.</p>";
-      }).catch((err) => {
-        console.error("Google Sheets save failed:", err);
-        document.body.innerHTML = `
-          <p style='font-size: 28px; color: red; text-align: center;'>Błąd zapisu danych. Spróbuj ponownie.</p>
-          <p style='font-size: 20px; text-align: center;'>Zapisz dane lokalnie, klikając poniżej.</p>
-          <div style='text-align: center; margin-top: 20px;'>
-            <button onclick="downloadBackup()" style='font-size: 20px; padding: 10px 20px;'>Pobierz dane</button>
-          </div>
-        `;
-
-        window.downloadBackup = function () {
-          const csv = jsPsych.data.get().csv();
-          const blob = new Blob([csv], { type: 'text/csv' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'backup_responses.csv';
-          a.click();
-        }
-      });
-    }
-}).then(() => {
+          fetch("https://script.google.com/macros/s/AKfycbw2XJTwnQ2gmYFD93IQtsXpJkUdqyG9U.../exec", {
+            method: "POST",
+            body: JSON.stringify({ participant_id: pid, responses: data }),
+            headers: { "Content-Type": "application/json" }
+          }).then(() => {
             document.body.innerHTML = "<p style='font-size: 32px; text-align: center;'>Dziękujemy! Twoje odpowiedzi zostały zapisane.</p>";
           }).catch((err) => {
-            document.body.innerHTML = "<p style='font-size: 32px; text-align: center; color: red;'>Błąd zapisu danych. Spróbuj ponownie.</p>";
-            console.error(err);
+            console.error("Google Sheets save failed:", err);
+            document.body.innerHTML = `
+              <p style='font-size: 28px; color: red; text-align: center;'>Błąd zapisu danych. Spróbuj ponownie.</p>
+              <p style='font-size: 20px; text-align: center;'>Zapisz dane lokalnie, klikając poniżej.</p>
+              <div style='text-align: center; margin-top: 20px;'>
+                <button onclick="downloadBackup()" style='font-size: 20px; padding: 10px 20px;'>Pobierz dane</button>
+              </div>
+            `;
+            window.downloadBackup = function () {
+              const csv = jsPsych.data.get().csv();
+              const blob = new Blob([csv], { type: 'text/csv' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'backup_responses.csv';
+              a.click();
+            };
           });
         }
       });
     });
 </script>
 </html>
-
-<style>
-  form button.jspsych-btn {
-    display: none !important;
-  }
-</style>
