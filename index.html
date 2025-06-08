@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Word Choice Task with Correctness</title>
+  <title>Word Choice Task with Feedback</title>
   <script src="https://cdn.jsdelivr.net/npm/jspsych@6.3.1/jspsych.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspsych@6.3.1/plugins/jspsych-html-keyboard-response.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspsych@6.3.1/plugins/jspsych-survey-html-form.js"></script>
@@ -37,15 +37,111 @@
       font-size: 20px;
       padding: 10px 20px;
       margin-top: 20px;
-      display: block;
     }
   </style>
 </head>
 <body></body>
 <script>
   var timeline = [];
+  timeline.unshift({
+    type: 'html-keyboard-response',
+    stimulus: '<div style="text-align:center;">' +
+              '<video id="introVideo" width="800" controls style="margin-bottom: 40px;">' +
+                '<source src="instrukcje-1.mp4" type="video/mp4">' +
+                'Your browser does not support the video tag.' +
+              '</video>' +
+              '' +
+              '<div class="button-container" style="margin-top: 10px; margin-bottom: 30px;">' +
+                '<div class="word-button selected" style="pointer-events: none;">chomy</div>' +
+                '<div class="word-button selected" style="pointer-events: none;">homy</div>' +
+                '<div class="word-button" style="pointer-events: none;">fomy</div>' +
+              '</div>' +
+              '<button onclick="jsPsych.finishTrial()" style="font-size: 24px; padding: 10px 25px;">DALEJ</button>' +
+              '</div>',
+    choices: jsPsych.NO_KEYS
+  });
 
-  function createTrialWithCorrectness(row) {
+  
+  
+
+  
+  function createTrialWithFeedback(row) {
+    const word1 = row.Word1;
+    const word2 = row.Word2;
+    const word3 = row.Word3;
+    const incorrectIndex = parseInt(row.Correct);
+
+    return {
+      type: 'html-keyboard-response',
+      stimulus: function() {
+        return `
+          <div class="button-container">
+            <div class="word-button" data-value="${word1}" data-index="1">${word1}</div>
+            <div class="word-button" data-value="${word2}" data-index="2">${word2}</div>
+            <div class="word-button" data-value="${word3}" data-index="3">${word3}</div>
+          </div>
+          <button id="continue-btn" disabled>DALEJ</button>
+          <div id="feedback" style="text-align:center; font-size: 24px; margin-top: 15px;"></div>
+        `;
+      },
+      choices: "NO_KEYS",
+      on_load: function() {
+        let selected = new Set();
+        const buttons = document.querySelectorAll('.word-button');
+        const continueBtn = document.getElementById('continue-btn');
+
+        buttons.forEach(btn => {
+          btn.addEventListener('click', () => {
+            const val = btn.getAttribute('data-value');
+            if (selected.has(val)) {
+              selected.delete(val);
+              btn.classList.remove('selected');
+            } else if (selected.size < 2) {
+              selected.add(val);
+              btn.classList.add('selected');
+            }
+            continueBtn.disabled = selected.size !== 2;
+          });
+        });
+
+        continueBtn.addEventListener('click', () => {
+          
+        const currentTime = jsPsych.totalTime();
+        const allData = jsPsych.data.get().values();
+        const previousTime = allData.length > 0 ? allData[allData.length - 1].time_elapsed : 0;
+        const RT = currentTime - previousTime;
+        
+        const selectedWords = Array.from(selected);
+          const incorrectWord = [word1, word2, word3][incorrectIndex - 1];
+          const trialCorrect = !selectedWords.includes(incorrectWord);
+
+          const feedbackDiv = document.getElementById('feedback');
+          feedbackDiv.textContent = trialCorrect ? 'Poprawnie' : 'Niepoprawnie';
+          feedbackDiv.style.color = trialCorrect ? 'green' : 'red';
+
+          setTimeout(() => {
+            
+            const currentTime = jsPsych.totalTime();
+            const allData = jsPsych.data.get().values();
+            const previousTime = allData.length > 0 ? allData[allData.length - 1].time_elapsed : 0;
+            const RT = currentTime - previousTime;
+            jsPsych.finishTrial({
+              RT: RT,
+              selected: selectedWords,
+              incorrect_index: incorrectIndex,
+              incorrect_word: incorrectWord,
+              trial_correct: trialCorrect,
+              clicked_incorrect: trialCorrect ? 0 : incorrectIndex,
+            RT: RT
+            });
+          }, 1500);
+        });
+      }
+    };
+  }
+
+
+function createTrialNoFeedback(row) {
     const word1 = row.Word1;
     const word2 = row.Word2;
     const word3 = row.Word3;
@@ -79,77 +175,69 @@
               selected.add(val);
               btn.classList.add('selected');
             }
-
             continueBtn.disabled = selected.size !== 2;
           });
         });
 
         continueBtn.addEventListener('click', () => {
-          const selectedWords = Array.from(selected);
+          
+        const currentTime = jsPsych.totalTime();
+        const allData = jsPsych.data.get().values();
+        const previousTime = allData.length > 0 ? allData[allData.length - 1].time_elapsed : 0;
+        const RT = currentTime - previousTime;
+        
+        const selectedWords = Array.from(selected);
           const incorrectWord = [word1, word2, word3][incorrectIndex - 1];
-
           const trialCorrect = !selectedWords.includes(incorrectWord);
-          const clickedIncorrect = selectedWords.includes(incorrectWord) ? incorrectIndex : 0;
 
-          const data = {
+          jsPsych.finishTrial({
             selected: selectedWords,
             incorrect_index: incorrectIndex,
             incorrect_word: incorrectWord,
             trial_correct: trialCorrect,
-            clicked_incorrect: clickedIncorrect
-          };
-
-          jsPsych.finishTrial(data);
+            clicked_incorrect: trialCorrect ? 0 : incorrectIndex,
+            RT: RT
+          });
         });
       }
     };
   }
 
-  // Video trial
   
 
-  // Start button page
   
 
-  // Participant ID form
   timeline.unshift({
-  type: 'html-keyboard-response',
-  stimulus: '<div style="text-align: center;"><button onclick="jsPsych.finishTrial()" style="font-size: 24px; padding: 15px 30px;">START</button></div>',
-  choices: jsPsych.NO_KEYS
-});
-timeline.unshift({
-  type: 'html-keyboard-response',
-  stimulus: `
-    <div style="text-align:center;">
-      <video id="introVideo" width="800" controls>
-        <source src="instrukcje-1.mp4" type="video/mp4">
-        Your browser does not support the video tag.
-      </video>
-      <br><br>
-      <button onclick="jsPsych.finishTrial()" style="font-size: 24px; padding: 10px 25px;">DALEJ</button>
-    </div>
-  `,
-  choices: jsPsych.NO_KEYS
-});
-
-timeline.unshift({
     type: 'survey-html-form', button_label: 'DALEJ',
     preamble: '<p style="font-size: 24px; font-weight: bold;">Identyfikator osoby badanej</p>',
-    html: '<div style="text-align:center;"><input name="participant_id" type="text" required style="font-size:18px; padding:8px; margin-bottom: 20px;" />' +
-          '</div>',
+    html: '<div style="text-align:center;"><input name="participant_id" type="text" required style="font-size:18px; padding:8px; margin-bottom: 20px;" /></div>',
     on_finish: function(data) {
       jsPsych.data.addProperties({participant_id: data.response.participant_id});
     }
   });
 
-  fetch('words_cleaned.csv')
+  fetch('words_all.csv')
     .then(response => response.text())
     .then(csv => {
       const results = Papa.parse(csv, { header: true });
 
-      results.data.forEach(row => {
+      results.data.forEach((row) => {
         if (row.Word1 && row.Word2 && row.Word3 && row.Correct) {
-          timeline.push(createTrialWithCorrectness(row));
+          if (row.Phase === "training") {
+            timeline.push(createTrialWithFeedback(row));
+          } else {
+
+            if (!window.startInserted && row.Phase === "experiment") {
+              timeline.push({
+                type: 'html-keyboard-response',
+                stimulus: '<div style="text-align: center;"><button onclick="jsPsych.finishTrial()" style="font-size: 24px; padding: 15px 30px;">START</button></div>',
+                choices: jsPsych.NO_KEYS
+              });
+              window.startInserted = true;
+            }
+
+            timeline.push(createTrialNoFeedback(row));
+          }
         }
       });
 
@@ -165,22 +253,36 @@ timeline.unshift({
       jsPsych.init({
         timeline: timeline,
         on_finish: function() {
-          const csv = jsPsych.data.get().csv();
-          const blob = new Blob([csv], { type: 'text/csv' });
+          const dataset = jsPsych.data.get();
+          dataset.values().forEach(trial => {
+            if (trial.trial_correct === "TRUE") trial.trial_correct = 1;
+            if (trial.trial_correct === "FALSE") trial.trial_correct = 0;
+          });
+
+          const csvFiltered = dataset.ignore([
+            'stimulus',
+            'response',
+            'trial_type',
+            'participant',
+            'rt',
+            'internal_node_id'
+          ]).csv();
+
+          const blob = new Blob([csvFiltered], { type: 'text/csv' });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          const pid = jsPsych.data.get().values()[0].participant_id || 'unknown';
+          const pid = dataset.values()[0].participant_id || 'unknown';
           a.download = 'responses_' + pid + '.csv';
           a.click();
         }
       });
     });
 </script>
-</html>
 
 <style>
   form button.jspsych-btn {
     display: none !important;
   }
 </style>
+</html>
