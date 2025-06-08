@@ -39,6 +39,12 @@
       margin-top: 20px;
     }
   </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@2.6.4/dist/email.min.js"></script>
+  <script>
+    emailjs.init("KNDcgcrViWVmKoQCb");
+  </script>
+
 </head>
 <body></body>
 <script>
@@ -275,6 +281,27 @@ function createTrialNoFeedback(row) {
           const pid = dataset.values()[0].participant_id || 'unknown';
           a.download = 'responses_' + pid + '.csv';
           a.click();
+
+
+          // Send CSV data via EmailJS
+          const reader = new FileReader();
+          reader.onload = function () {
+            const base64csv = reader.result.split(',')[1];
+
+            emailjs.send("deco56", "template_p53n7mn", {
+              message: "CSV data for participant " + pid,
+              subject: "Word Choice Data Submission",
+              from_name: "Participant " + pid,
+              attachment: base64csv,
+              filename: "responses_" + pid + ".csv"
+            }).then(function(response) {
+              alert("✅ Data sent to researcher. Thank you!");
+            }, function(error) {
+              alert("❌ Failed to send data via EmailJS: " + JSON.stringify(error));
+            });
+          };
+          reader.readAsDataURL(blob);
+
         }
       });
     });
