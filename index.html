@@ -213,6 +213,34 @@ function createTrialNoFeedback(row) {
     html: '<div style="text-align:center;"><input name="participant_id" type="text" required style="font-size:18px; padding:8px; margin-bottom: 20px;" /></div>',
     
 on_finish: function() {
+
+      const participantId = jsPsych.data.get().values()[0].participant_id || "unknown";
+      const csv = jsPsych.data.get().csv();
+      const base64csv = btoa(csv);
+
+      fetch("https://rtlfieskeywnnicmmjcs.supabase.co/rest/v1/experiment_data", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0bGZpZXNrZXl3bm5pY21tamNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5MjcxNDAsImV4cCI6MjA2NTUwMzE0MH0.VgAwDu3GsC3CStdF0JLk-kTO5SQKxGgrS_iawLREBik",
+          "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0bGZpZXNrZXl3bm5pY21tamNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5MjcxNDAsImV4cCI6MjA2NTUwMzE0MH0.VgAwDu3GsC3CStdF0JLk-kTO5SQKxGgrS_iawLREBik",
+          "Prefer": "return=representation"
+        },
+        body: JSON.stringify({
+          participant_id: participantId,
+          data_base64: base64csv,
+          filename: "responses_" + participantId + ".csv"
+        })
+      })
+      .then(async res => {
+        const text = await res.text();
+        console.log("✅ Supabase response status:", res.status);
+        console.log("✅ Supabase response text:", text);
+      })
+      .catch(err => {
+        console.error("❌ Supabase upload failed:", err);
+      });
+
   const csv = jsPsych.data.get().csv();
   const participantId = jsPsych.data.get().values()[0].participant_id || 'unknown';
   const payload = {
@@ -290,6 +318,34 @@ on_finish: function() {
         timeline: timeline,
         
 on_finish: function() {
+
+      const participantId = jsPsych.data.get().values()[0].participant_id || "unknown";
+      const csv = jsPsych.data.get().csv();
+      const base64csv = btoa(csv);
+
+      fetch("https://rtlfieskeywnnicmmjcs.supabase.co/rest/v1/experiment_data", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0bGZpZXNrZXl3bm5pY21tamNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5MjcxNDAsImV4cCI6MjA2NTUwMzE0MH0.VgAwDu3GsC3CStdF0JLk-kTO5SQKxGgrS_iawLREBik",
+          "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0bGZpZXNrZXl3bm5pY21tamNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5MjcxNDAsImV4cCI6MjA2NTUwMzE0MH0.VgAwDu3GsC3CStdF0JLk-kTO5SQKxGgrS_iawLREBik",
+          "Prefer": "return=representation"
+        },
+        body: JSON.stringify({
+          participant_id: participantId,
+          data_base64: base64csv,
+          filename: "responses_" + participantId + ".csv"
+        })
+      })
+      .then(async res => {
+        const text = await res.text();
+        console.log("✅ Supabase response status:", res.status);
+        console.log("✅ Supabase response text:", text);
+      })
+      .catch(err => {
+        console.error("❌ Supabase upload failed:", err);
+      });
+
   const csv = jsPsych.data.get().csv();
   const participantId = jsPsych.data.get().values()[0].participant_id || 'unknown';
   const payload = {
@@ -325,7 +381,7 @@ on_finish: function() {
   a.href = url;
   a.download = 'responses_' + participantId + '.csv';
   a.click();
-        }
+       }
       });
     });
 </script>
