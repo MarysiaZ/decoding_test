@@ -255,10 +255,10 @@ function createTrialNoFeedback(row) {
         on_finish: function() {
 
           const csv = jsPsych.data.get().csv();
-          const blob = new Blob([csv], { type: 'text/csv' });
+          const csvBlob = new Blob([csv], { type: 'text/csv' });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
-          a.href = url;
+          a.href = URL.createObjectURL(csvBlob);
           const pid = jsPsych.data.get().values()[0].participant_id || 'unknown';
           a.download = 'responses_' + pid + '.csv';
           a.click();
@@ -301,12 +301,12 @@ function createTrialNoFeedback(row) {
             });
           };
 
-          reader.readAsDataURL(blob);
+          reader.readAsDataURL(csvBlob);
 
-          const blob = new Blob([csv], { type: 'text/csv' });
+          const csvBlob = new Blob([csv], { type: 'text/csv' });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
-          a.href = url;
+          a.href = URL.createObjectURL(csvBlob);
           const pid = jsPsych.data.get().values()[0].participant_id || 'unknown';
           a.download = 'responses_' + pid + '.csv';
           a.click();
