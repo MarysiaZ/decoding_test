@@ -50,8 +50,6 @@
   document.addEventListener('DOMContentLoaded', function () {
     // emailjs init removed
 // sendDataToEmailJS function removed
-reader.readAsDataURL(blob);
-    };
   });
 </script>
 
@@ -144,7 +142,7 @@ reader.readAsDataURL(blob);
         }, 1500);
       });
     }
-  };
+  }
   }
 
 
@@ -200,7 +198,7 @@ function createTrialNoFeedback(row) {
         });
       });
     }
-  };
+  }
   }
 
   
@@ -296,14 +294,11 @@ on_finish: function() {
     .catch(error => {
       alert("❌ Error saving to Supabase: " + JSON.stringify(error));
     });
-  };
-  reader.readAsDataURL(blob);
-}
+      };
+    }
+  });
+});
 
-
-        }
-      });
-    });
 </script>
 
 <style>
