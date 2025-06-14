@@ -42,35 +42,22 @@
 
   
   <script>
-    emailjs.init("KNDcgcrViWVmKoQCb");
   </script>
+
+
+<!-- EmailJS script removed -->
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // emailjs init removed
+// sendDataToEmailJS function removed
+reader.readAsDataURL(blob);
+    };
+  });
+</script>
 
 </head>
 <body>
-<script type="module">
-  import emailjs from 'https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js';
 
-  emailjs.init("KNDcgcrViWVmKoQCb");
-
-  window.sendDataToEmailJS = function(pid, blob) {
-    const reader = new FileReader();
-    reader.onload = function () {
-      const base64csv = reader.result.split(',')[1];
-      emailjs.send("deco56", "template_p53n7mn", {
-        message: "CSV data for participant " + pid,
-        subject: "Word Choice Data Submission",
-        from_name: "Participant " + pid,
-        attachment: base64csv,
-        filename: "responses_" + pid + ".csv"
-      }).then(function(response) {
-        alert("✅ Data sent to researcher. Thank you!");
-      }, function(error) {
-        alert("❌ Failed to send data via EmailJS: " + JSON.stringify(error));
-      });
-    };
-    reader.readAsDataURL(blob);
-  };
-</script>
 
 </body>
 <script>
@@ -98,141 +85,122 @@
 
   
   function createTrialWithFeedback(row) {
-    const word1 = row.Word1;
-    const word2 = row.Word2;
-    const word3 = row.Word3;
-    const incorrectIndex = parseInt(row.Correct);
+  const word1 = row.Word1;
+  const word2 = row.Word2;
+  const incorrectIndex = parseInt(row.Correct);
 
-    return {
-      type: 'html-keyboard-response',
-      stimulus: function() {
-        return `
-          <div class="button-container">
-            <div class="word-button" data-value="${word1}" data-index="1">${word1}</div>
-            <div class="word-button" data-value="${word2}" data-index="2">${word2}</div>
-            <div class="word-button" data-value="${word3}" data-index="3">${word3}</div>
-          </div>
-          <button id="continue-btn" disabled>DALEJ</button>
-          <div id="feedback" style="text-align:center; font-size: 24px; margin-top: 15px;"></div>
-        `;
-      },
-      choices: "NO_KEYS",
-      on_load: function() {
-        let selected = new Set();
-        const buttons = document.querySelectorAll('.word-button');
-        const continueBtn = document.getElementById('continue-btn');
+  return {
+    type: 'html-keyboard-response',
+    stimulus: function () {
+      return `
+        <div class="button-container">
+          <div class="word-button" data-value="${word1}" data-index="1">${word1}</div>
+          <div class="word-button" data-value="${word2}" data-index="2">${word2}</div>
+        </div>
+        <button id="continue-btn" disabled>DALEJ</button>
+        <div id="feedback" style="text-align:center; font-size: 24px; margin-top: 15px;"></div>
+      `;
+    },
+    choices: jsPsych.NO_KEYS,
+    on_load: function () {
+      let selected = new Set();
+      const buttons = document.querySelectorAll('.word-button');
+      const continueBtn = document.getElementById('continue-btn');
 
-        buttons.forEach(btn => {
-          btn.addEventListener('click', () => {
-            const val = btn.getAttribute('data-value');
-            if (selected.has(val)) {
-              selected.delete(val);
-              btn.classList.remove('selected');
-            } else if (selected.size < 2) {
-              selected.add(val);
-              btn.classList.add('selected');
-            }
-            continueBtn.disabled = selected.size !== 2;
-          });
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          selected.clear();
+          buttons.forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          selected.add(btn.getAttribute('data-value'));
+          continueBtn.disabled = selected.size !== 1;
         });
+      });
 
-        continueBtn.addEventListener('click', () => {
-          
+      continueBtn.addEventListener('click', () => {
         const currentTime = jsPsych.totalTime();
         const allData = jsPsych.data.get().values();
         const previousTime = allData.length > 0 ? allData[allData.length - 1].time_elapsed : 0;
         const RT = currentTime - previousTime;
-        
-        const selectedWords = Array.from(selected);
-          const incorrectWord = [word1, word2, word3][incorrectIndex - 1];
-          const trialCorrect = !selectedWords.includes(incorrectWord);
 
-          const feedbackDiv = document.getElementById('feedback');
-          feedbackDiv.textContent = trialCorrect ? 'Poprawnie' : 'Niepoprawnie';
-          feedbackDiv.style.color = trialCorrect ? 'green' : 'red';
+        const selectedWord = Array.from(selected)[0];
+        const correctWord = [word1, word2][incorrectIndex - 1];
+        const trialCorrect = selectedWord === correctWord;
 
-          setTimeout(() => {
-            
-            const currentTime = jsPsych.totalTime();
-            const allData = jsPsych.data.get().values();
-            const previousTime = allData.length > 0 ? allData[allData.length - 1].time_elapsed : 0;
-            const RT = currentTime - previousTime;
-            jsPsych.finishTrial({
-              RT: RT,
-              selected: selectedWords,
-              incorrect_index: incorrectIndex,
-              incorrect_word: incorrectWord,
-              trial_correct: trialCorrect,
-              clicked_incorrect: trialCorrect ? 0 : incorrectIndex,
-            RT: RT
-            });
-          }, 1500);
-        });
-      }
-    };
+        const feedbackDiv = document.getElementById('feedback');
+        feedbackDiv.textContent = trialCorrect ? 'Poprawnie' : 'Niepoprawnie';
+        feedbackDiv.style.color = trialCorrect ? 'green' : 'red';
+
+        setTimeout(() => {
+          const finalRT = jsPsych.totalTime() - currentTime;
+          jsPsych.finishTrial({
+            RT: finalRT,
+            selected: selectedWord,
+            incorrect_index: incorrectIndex,
+            incorrect_word: correctWord,
+            trial_correct: trialCorrect,
+            clicked_incorrect: trialCorrect ? 0 : incorrectIndex
+          });
+        }, 1500);
+      });
+    }
+  };
   }
 
 
 function createTrialNoFeedback(row) {
-    const word1 = row.Word1;
-    const word2 = row.Word2;
-    const word3 = row.Word3;
-    const incorrectIndex = parseInt(row.Correct);
+  const word1 = row.Word1;
+  const word2 = row.Word2;
+  const incorrectIndex = parseInt(row.Correct);
 
-    return {
-      type: 'html-keyboard-response',
-      stimulus: function() {
-        return `
-          <div class="button-container">
-            <div class="word-button" data-value="${word1}" data-index="1">${word1}</div>
-            <div class="word-button" data-value="${word2}" data-index="2">${word2}</div>
-            <div class="word-button" data-value="${word3}" data-index="3">${word3}</div>
-          </div>
-          <button id="continue-btn" disabled>DALEJ</button>
-        `;
-      },
-      choices: "NO_KEYS",
-      on_load: function() {
-        let selected = new Set();
-        const buttons = document.querySelectorAll('.word-button');
-        const continueBtn = document.getElementById('continue-btn');
+  return {
+    type: 'html-keyboard-response',
+    stimulus: function () {
+      return `
+        <div class="button-container">
+          <div class="word-button" data-value="${word1}" data-index="1">${word1}</div>
+          <div class="word-button" data-value="${word2}" data-index="2">${word2}</div>
+        </div>
+        <button id="continue-btn" disabled>DALEJ</button>
+      `;
+    },
+    choices: jsPsych.NO_KEYS,
+    on_load: function () {
+      let selected = new Set();
+      const buttons = document.querySelectorAll('.word-button');
+      const continueBtn = document.getElementById('continue-btn');
 
-        buttons.forEach(btn => {
-          btn.addEventListener('click', () => {
-            const val = btn.getAttribute('data-value');
-            if (selected.has(val)) {
-              selected.delete(val);
-              btn.classList.remove('selected');
-            } else if (selected.size < 2) {
-              selected.add(val);
-              btn.classList.add('selected');
-            }
-            continueBtn.disabled = selected.size !== 2;
-          });
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          selected.clear();
+          buttons.forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          selected.add(btn.getAttribute('data-value'));
+          continueBtn.disabled = selected.size !== 1;
         });
+      });
 
-        continueBtn.addEventListener('click', () => {
-          
+      continueBtn.addEventListener('click', () => {
         const currentTime = jsPsych.totalTime();
         const allData = jsPsych.data.get().values();
         const previousTime = allData.length > 0 ? allData[allData.length - 1].time_elapsed : 0;
         const RT = currentTime - previousTime;
-        
-        const selectedWords = Array.from(selected);
-          const incorrectWord = [word1, word2, word3][incorrectIndex - 1];
-          const trialCorrect = !selectedWords.includes(incorrectWord);
 
-          jsPsych.finishTrial({
-            selected: selectedWords,
-            incorrect_index: incorrectIndex,
-            incorrect_word: incorrectWord,
-            trial_correct: trialCorrect,
-            clicked_incorrect: trialCorrect ? 0 : incorrectIndex,
-            RT: RT
-          });
+        const selectedWord = Array.from(selected)[0];
+        const correctWord = [word1, word2][incorrectIndex - 1];
+        const trialCorrect = selectedWord === correctWord;
+
+        jsPsych.finishTrial({
+          RT: RT,
+          selected: selectedWord,
+          incorrect_index: incorrectIndex,
+          incorrect_word: correctWord,
+          trial_correct: trialCorrect,
+          clicked_incorrect: trialCorrect ? 0 : incorrectIndex
         });
-      }
-    };
+      });
+    }
+  };
   }
 
   
@@ -262,7 +230,11 @@ function createTrialNoFeedback(row) {
             if (!window.startInserted && row.Phase === "experiment") {
               timeline.push({
                 type: 'html-keyboard-response',
-                stimulus: '<div style="text-align: center;"><button onclick="jsPsych.finishTrial()" style="font-size: 24px; padding: 15px 30px;">START</button></div>',
+                stimulus: `
+                  <div style="text-align: center;">
+                    <button onclick="jsPsych.finishTrial()" style="font-size: 24px; padding: 15px 30px;">START</button>
+                  </div>
+                `,
                 choices: jsPsych.NO_KEYS
               });
               window.startInserted = true;
@@ -284,50 +256,50 @@ function createTrialNoFeedback(row) {
 
       jsPsych.init({
         timeline: timeline,
-        on_finish: function() {
-          const dataset = jsPsych.data.get();
-          dataset.values().forEach(trial => {
-            if (trial.trial_correct === "TRUE") trial.trial_correct = 1;
-            if (trial.trial_correct === "FALSE") trial.trial_correct = 0;
-          });
+        
+on_finish: function() {
+  const dataset = jsPsych.data.get();
+  const csvFiltered = dataset.ignore([
+    'stimulus',
+    'response',
+    'trial_type',
+    'participant',
+    'rt',
+    'internal_node_id'
+  ]).csv();
 
-          const csvFiltered = dataset.ignore([
-            'stimulus',
-            'response',
-            'trial_type',
-            'participant',
-            'rt',
-            'internal_node_id'
-          ]).csv();
+  const pid = dataset.values()[0].participant_id || 'unknown';
+  const blob = new Blob([csvFiltered], { type: 'text/csv' });
 
-          const blob = new Blob([csvFiltered], { type: 'text/csv' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          const pid = dataset.values()[0].participant_id || 'unknown';
-          a.download = 'responses_' + pid + '.csv';
-          a.click();
-window.sendDataToEmailJS(pid, blob);
+  const reader = new FileReader();
+  reader.onload = function () {
+    const base64csv = reader.result.split(',')[1];
 
+    fetch("https://rtlfieskeywnnicmmjcs.supabase.co/rest/v1/experiment_data", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0bGZpZXNrZXl3bm5pY21tamNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5MjcxNDAsImV4cCI6MjA2NTUwMzE0MH0.VgAwDu3GsC3CStdF0JLk-kTO5SQKxGgrS_iawLREBik",
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0bGZpZXNrZXl3bm5pY21tamNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5MjcxNDAsImV4cCI6MjA2NTUwMzE0MH0.VgAwDu3GsC3CStdF0JLk-kTO5SQKxGgrS_iawLREBik",
+        "Prefer": "return=representation"
+      },
+      body: JSON.stringify({
+        participant_id: pid,
+        data_base64: base64csv,
+        filename: "responses_" + pid + ".csv"
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      alert("✅ Data saved to Supabase. Thank you!");
+    })
+    .catch(error => {
+      alert("❌ Error saving to Supabase: " + JSON.stringify(error));
+    });
+  };
+  reader.readAsDataURL(blob);
+}
 
-          // Send CSV data via EmailJS
-          const reader = new FileReader();
-          reader.onload = function () {
-            const base64csv = reader.result.split(',')[1];
-
-            emailjs.send("deco56", "template_p53n7mn", {
-              message: "CSV data for participant " + pid,
-              subject: "Word Choice Data Submission",
-              from_name: "Participant " + pid,
-              attachment: base64csv,
-              filename: "responses_" + pid + ".csv"
-            }).then(function(response) {
-              alert("✅ Data sent to researcher. Thank you!");
-            }, function(error) {
-              alert("❌ Failed to send data via EmailJS: " + JSON.stringify(error));
-            });
-          };
-          reader.readAsDataURL(blob);
 
         }
       });
