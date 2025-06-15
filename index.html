@@ -284,7 +284,7 @@ jsPsych.init({
             body: JSON.stringify({
               participant_id: pid,
               data_base64: base64csv,
-              filename: "responses_" + pid + ".csv"
+              filename: "decoding_" + pid + ".csv"
             })
           })
           .then(res => res.text())
