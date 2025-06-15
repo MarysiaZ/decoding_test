@@ -211,72 +211,8 @@ function createTrialNoFeedback(row) {
     type: 'survey-html-form', button_label: 'DALEJ',
     preamble: '<p style="font-size: 24px; font-weight: bold;">Identyfikator osoby badanej</p>',
     html: '<div style="text-align:center;"><input name="participant_id" type="text" required style="font-size:18px; padding:8px; margin-bottom: 20px;" /></div>',
-    
-on_finish: function() {
-
-      const participantId = jsPsych.data.get().values()[0].participant_id || "unknown";
-      const csv = jsPsych.data.get().csv();
-      const base64csv = btoa(csv);
-
-      fetch("https://rtlfieskeywnnicmmjcs.supabase.co/rest/v1/experiment_data", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0bGZpZXNrZXl3bm5pY21tamNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5MjcxNDAsImV4cCI6MjA2NTUwMzE0MH0.VgAwDu3GsC3CStdF0JLk-kTO5SQKxGgrS_iawLREBik",
-          "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0bGZpZXNrZXl3bm5pY21tamNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5MjcxNDAsImV4cCI6MjA2NTUwMzE0MH0.VgAwDu3GsC3CStdF0JLk-kTO5SQKxGgrS_iawLREBik",
-          "Prefer": "return=representation"
-        },
-        body: JSON.stringify({
-          participant_id: participantId,
-          data_base64: base64csv,
-          filename: "responses_" + participantId + ".csv"
-        })
-      })
-      .then(async res => {
-        const text = await res.text();
-        console.log("✅ Supabase response status:", res.status);
-        console.log("✅ Supabase response text:", text);
-      })
-      .catch(err => {
-        console.error("❌ Supabase upload failed:", err);
-      });
-
-  const csv = jsPsych.data.get().csv();
-  const participantId = jsPsych.data.get().values()[0].participant_id || 'unknown';
-  const payload = {
-    participant_id: participantId,
-    data_base64: btoa(csv),
-    filename: 'responses_' + participantId + '.csv'
-  };
-
-  console.log("Preparing to send data...");
-  console.log("Payload:", payload);
-
-  fetch("https://rtlfieskeywnnicmmjcs.supabase.co/rest/v1/experiment_data", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0bGZpZXNrZXl3bm5pY21tamNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5MjcxNDAsImV4cCI6MjA2NTUwMzE0MH0.VgAwDu3GsC3CStdF0JLk-kTO5SQKxGgrS_iawLREBik",
-      "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0bGZpZXNrZXl3bm5pY21tamNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5MjcxNDAsImV4cCI6MjA2NTUwMzE0MH0.VgAwDu3GsC3CStdF0JLk-kTO5SQKxGgrS_iawLREBik",
-      "Prefer": "return=representation"
-    },
-    body: JSON.stringify(payload)
-  })
-  .then(async res => {
-    const text = await res.text();
-    console.log("Response status:", res.status);
-    console.log("Response text:", text);
-  })
-  .catch(error => {
-    console.error("❌ Upload error:", error.message);
-  });
-
-  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'responses_' + participantId + '.csv';
-  a.click();
-
+    on_finish: function(data) {
+      jsPsych.data.addProperties({participant_id: data.response.participant_id});
     }
   });
 
@@ -314,74 +250,48 @@ on_finish: function() {
 
       jsPsych.data.addProperties({participant: 'test'});
 
-      jsPsych.init({
+      
+function encodeToBase64Unicode(str) {
+  const bytes = new TextEncoder().encode(str);
+  let binary = '';
+  bytes.forEach((b) => binary += String.fromCharCode(b));
+  return btoa(binary);
+}
+
+
+jsPsych.init({
         timeline: timeline,
-        
-on_finish: function() {
+        on_finish: function() {
+          const csv = jsPsych.data.get().csv();
+          const blob = new Blob([csv], { type: 'text/csv' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          const pid = jsPsych.data.get().values()[0].participant_id || 'unknown';
+          a.download = 'decoding_' + pid + '.csv';
+          a.click();
 
-      const participantId = jsPsych.data.get().values()[0].participant_id || "unknown";
-      const csv = jsPsych.data.get().csv();
-      const base64csv = btoa(csv);
+          // Send to Supabase
+          const base64csv = encodeToBase64Unicode(csv);
+          fetch("https://rtlfieskeywnnicmmjcs.supabase.co/rest/v1/experiment_data", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0bGZpZXNrZXl3bm5pY21tamNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5MjcxNDAsImV4cCI6MjA2NTUwMzE0MH0.VgAwDu3GsC3CStdF0JLk-kTO5SQKxGgrS_iawLREBik",
+              "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0bGZpZXNrZXl3bm5pY21tamNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5MjcxNDAsImV4cCI6MjA2NTUwMzE0MH0.VgAwDu3GsC3CStdF0JLk-kTO5SQKxGgrS_iawLREBik",
+              "Prefer": "return=representation"
+            },
+            body: JSON.stringify({
+              participant_id: pid,
+              data_base64: base64csv,
+              filename: "responses_" + pid + ".csv"
+            })
+          })
+          .then(res => res.text())
+          .then(text => console.log("Supabase response:", text))
+          .catch(error => console.error("❌ Supabase upload error:", error));
 
-      fetch("https://rtlfieskeywnnicmmjcs.supabase.co/rest/v1/experiment_data", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0bGZpZXNrZXl3bm5pY21tamNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5MjcxNDAsImV4cCI6MjA2NTUwMzE0MH0.VgAwDu3GsC3CStdF0JLk-kTO5SQKxGgrS_iawLREBik",
-          "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0bGZpZXNrZXl3bm5pY21tamNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5MjcxNDAsImV4cCI6MjA2NTUwMzE0MH0.VgAwDu3GsC3CStdF0JLk-kTO5SQKxGgrS_iawLREBik",
-          "Prefer": "return=representation"
-        },
-        body: JSON.stringify({
-          participant_id: participantId,
-          data_base64: base64csv,
-          filename: "responses_" + participantId + ".csv"
-        })
-      })
-      .then(async res => {
-        const text = await res.text();
-        console.log("✅ Supabase response status:", res.status);
-        console.log("✅ Supabase response text:", text);
-      })
-      .catch(err => {
-        console.error("❌ Supabase upload failed:", err);
-      });
-
-  const csv = jsPsych.data.get().csv();
-  const participantId = jsPsych.data.get().values()[0].participant_id || 'unknown';
-  const payload = {
-    participant_id: participantId,
-    data_base64: btoa(csv),
-    filename: 'responses_' + participantId + '.csv'
-  };
-
-  console.log("Preparing to send data...");
-  console.log("Payload:", payload);
-
-  fetch("https://rtlfieskeywnnicmmjcs.supabase.co/rest/v1/experiment_data", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0bGZpZXNrZXl3bm5pY21tamNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5MjcxNDAsImV4cCI6MjA2NTUwMzE0MH0.VgAwDu3GsC3CStdF0JLk-kTO5SQKxGgrS_iawLREBik",
-      "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0bGZpZXNrZXl3bm5pY21tamNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5MjcxNDAsImV4cCI6MjA2NTUwMzE0MH0.VgAwDu3GsC3CStdF0JLk-kTO5SQKxGgrS_iawLREBik",
-      "Prefer": "return=representation"
-    },
-    body: JSON.stringify(payload)
-  })
-  .then(async res => {
-    const text = await res.text();
-    console.log("Response status:", res.status);
-    console.log("Response text:", text);
-  })
-  .catch(error => {
-    console.error("❌ Upload error:", error.message);
-  });
-
-  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'responses_' + participantId + '.csv';
-  a.click();
-       }
+        }
       });
     });
 </script>
